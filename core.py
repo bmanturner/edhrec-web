@@ -201,7 +201,6 @@ def decks_are_dups(deck1, deck2, threshold = .7):
     in_common = len(set(deck1['cards']).intersection(set(deck2['cards'])))
 
     if in_common / avg_size > threshold:
-        print avg_size, in_common
         return True
     else:
         return False
