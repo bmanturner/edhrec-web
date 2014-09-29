@@ -228,7 +228,7 @@ def dedup_decks(decks, threshold = .7):
 #    for similar decks. Smaller numbers will have more variance and bias,
 #    but larger numbers will degenrate into "goodstuff.dec" for those particular colors.
 # See "Collaborative Filtering" on the Google. This approach is based on that.
-def recommend(deck, k=15):
+def recommend(deck, k=19):
     nn = datetime.datetime.now()
     logging.debug("Finding recommendations for deck with general " + str(deck['commander']))
 
