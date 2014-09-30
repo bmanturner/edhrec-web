@@ -31,9 +31,22 @@
             <div class="form-group" style="display:inline;">
               <div class="input-group">
                 <span class="input-group-addon">Tappedout</span>
-                <input type="text" class="form-control"  name="inputurl" id="inputurl" placeholder="i.e. http://tappedout.net/mtg-decks/storm-crow-wreck-face/" value="" >
+                <input type="text" class="form-control"  name="inputurl" id="inputurl" placeholder="i.g. http://tappedout.net/mtg-decks/storm-crow-wreck-face/" value="" >
                 <span class="input-group-btn">
-                  <button type="submit" id="submitURL" class="btn">Submit</button>
+                  <button type="submit" class="btn btn-primary" id="typedropdown" val="Artifact">Artifact</button>
+                  <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+                    <span class="caret"></span>
+                    <span class="sr-only">Toggle Dropdown</span>
+                  </button>
+                  <ul class="dropdown-menu" role="menu">
+                    <li><a href="#">Artifact</a></li>
+                    <li><a href="#">Creature</a></li>
+                    <li><a href="#">Enchantment</a></li>
+                    <li><a href="#">Instant</a></li>
+                    <li><a href="#">Land</a></li>
+                    <li><a href="#">Sorcery</a></li>
+                  </ul>
+                  <input type="hidden" name="category" class="category">
                 </span>
               </div>
             </div>
@@ -43,30 +56,31 @@
     </div>
   </div>
 
-  <div class="jumbotron" style="background-color: #ccc;" id="welcome">
-  	<div class="container" style="margin-top: 25px;">
-  		<!-- Edhrec Landing Info -->
-  		<h2>edhrec</h2>
-      <p class="lead">This is a web interface for a 'magic: the gathering' card recommendation engine created by Donald Miner.</p>
-      <p>His project can be found <a href="https://github.com/donaldpminer/edhrec">here</a>.</p>
-      <p>For testing purposes, feel free to use one of the following links:</p>
-      <blockquote>
-        <p>http://tappedout.net/mtg-decks/derevi-edh-deck/</p>
-        <p>http://tappedout.net/mtg-decks/surewhynots-seizan-perverter-of-truth/</p>
-      </blockquote>
+    <div class="jumbotron" style="background-color: #ccc;" id="welcome">
+  		<div class="container" style="margin-top: 25px;">
+  			<!-- Edhrec Landing Info -->
+  			<h2>edhrec</h2>
+        <p class="lead">This is a web interface for a magic the gathering card recommendation engine created by Donald Miner.</p>
+        <p>His project can be found <a href="https://github.com/donaldpminer/edhrec">here</a>.</p>
+        <p>This particular instance of his project draws its results from a very small database of decks and not every deck is guaranteed to receive results.</p>
+        <p>For testing purposes, feel free to use one of the following links:</p>
+        <blockquote>
+          <p>http://tappedout.net/mtg-decks/derevi-edh-deck/</p>
+          <p>http://tappedout.net/mtg-decks/surewhynots-seizan-perverter-of-truth/</p>
+        </blockquote>
+        <h3><strong><a href="https://github.com/brendanfturner/edhrec-web">Github</a></strong></h3>
+  		</div>
   	</div>
-  </div>
-  <div class="container" id="display">
-	  <div class="row">  
-			<div class="container col-xs-12" id="results" style="margin-top: 80px;">
-			    <div class="row" id="loading" style="margin-top: 145px;">
-			        <div class="col-xs-4 col-xs-offset-4">
-			            <div class="progress">
-			                <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%"></div>
-			            </div>
-			        </div>
-			    </div>
-			</div>
+  	<div class="container" id="display">
+		<div class="row">  
+			<div class="container col-xs-12" id="results" style="margin-top: 80px;"></div>
+      <div class="row" id="loading" style="margin-top: 145px;">
+              <div class="col-xs-4 col-xs-offset-4">
+                  <div class="progress">
+                      <div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%"></div>
+                  </div>
+              </div>
+          </div>
 		</div>
 	</div>
  
@@ -78,8 +92,18 @@
     $(document).ready(function(){
     	var $welcome = $('#welcome');
       var $display = $('#display');
+      var $loading = $('#loading');
     	var $results = $('#results');
-    	$display.hide();
+      var $typemenu = $('#typedropdown');
+    	$loading.hide();
+
+      $('.dropdown-menu li').click(function(event){
+        event.preventDefault();
+        var selected = $(this).text();
+        $typemenu.html(selected);
+        $typemenu.val(selected);
+      });
+
       $('#edhrec').submit(function(event){
         event.preventDefault();
         var $form = $(this);
@@ -89,16 +113,20 @@
           url: 'fetch_results.py',
           type: 'post',
           datatype: 'html',
-          data: {inputurl: $submiturl},
+          data: {inputurl: $submiturl,
+                 cardtype: $typemenu.text()},
           success: function(response){
             $display.fadeOut('xfast',function(){
               $results.html(response);
+              $loading.hide();
+              $results.show();
               $display.fadeIn('xfast');
             });
           },
           beforeSend: function(){
-            $welcome.slideUp('fast',function(){
-              $display.fadeIn('xfast');
+            $welcome.slideUp('slow',function(){
+              $results.hide();
+              $loading.fadeIn('xfast');
             });
           }
         });
