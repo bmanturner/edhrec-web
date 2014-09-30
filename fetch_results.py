@@ -5,50 +5,31 @@ import core
 import tappedout
 import logging
 import json
-import time
-import datetime
 import itertools
 import random
 import urllib2
 import HTMLParser
 import cgi
 
+# Required header for cgi output
+# Everything printed after this will be output to webpage
 print "Content-type:text/html\n\r\n\r"
 
-
+# Formats individual cards for html links
 def linkify(cn):
     return '<a href="http://gatherer.wizards.com/Handlers/Image.ashx?name=%s&type=card&.jpg" target="_blank">%s</a>' % (cn, core.cap_cardname(cn))
 
-
-form = cgi.FieldStorage()
-url = form['inputurl'].value
-if "http://" not in url:
-    url = "http://%s" % url
-
-url = tappedout.URL_PATTERN.match(url)
- 
-
-if url is None:
-    
-    print '<h2>That Uril wasn\'t recognized, sorry...</h2>' #badum tss
-else:
-    url = str(url.group(1))  
-
-    deck = tappedout.get_deck(url)
-    
+# Returns card recommendations of the specified type
+# t = 'Artifact' || 'Creature' || 'Enchantment' || 'Instant' || 'Sorcery' || 'Land'
+def rec_by_type(deck, t):
     newrecs, outrecs = core.recommend(deck)
-    lands = []
-    creatures =[]
-    enchantments = []
-    artifacts = []
-    spells = []
+    rec = []
 
     for card, score in newrecs:
         # filter out basic lands from being recommendations
         if card in ['swamp', 'island', 'plains', 'mountain', 'forest']:
             continue # there is an annoying thing that happens when people use snow-covered basics
                      # where edhrec will post basic lands as a recommendation. this prevents that
-
         if score < .3:
             continue
 
@@ -60,58 +41,47 @@ else:
             logging.warn('something went wong with the card %s, ignoring it' % card)
             continue
 
-     
-        if 'Creature' in types:
-            creatures.append((card, score))
-        elif 'Land' in types:
-            lands.append((card, score))
-        elif 'Enchantment' in types:
-            enchantments.append((card,score))
-        elif 'Artifact' in types:
-            artifacts.append((card,score))
-        else:
-            spells.append((card, score))
-    out_str = []
+        if t in types:
+            rec.append((card, score))
 
-    out_str.append('<table class="table table-striped table-condensed table-bordered"><tr><th>Creatures</th><th>Spells</th><th>Enchantments</th><th>Artifacts</th><th>Lands</th></tr>')
+    return rec
+
+# Formats results in a table. t = the type
+# This should be expanded with more information about each card
+def print_rec(rec,t):
+    
+    print '<table class="table table-striped table-condensed table-hover"><tr><th style="width: 20px;">Score</th><th style="width: 200px;">%s</th><th>Mana Cost</th></tr>' % (t)
+
     for i in range(20):
 
-        try:
-            c = '<span class="badge">%d</span> %s ' % (creatures[i][1], linkify(creatures[i][0]))
-        except IndexError:
-            c = ' '
+        manacost = core.lookup_card(rec[i][0])['manaCost']
 
         try:
-            s = '<span class="badge">%d</span> %s ' % (spells[i][1], linkify(spells[i][0]))
-        except IndexError:
-            s = ' '
-
-        try:
-            e = '<span class="badge">%d</span> %s ' % (enchantments[i][1], linkify(enchantments[i][0]))
-        except IndexError:
-            e = ' '
-
-        try:
-            a = '<span class="badge">%d</span> %s ' % (artifacts[i][1], linkify(artifacts[i][0]))
-        except IndexError:
-            a = ' '
-
-        try:
-            l = '<span class="badge">%d</span> %s ' % (lands[i][1], linkify(lands[i][0]))
+            l = '<tr><td style="text-align: center;"><span class="badge">%d</td><td>%s</td><td>%s</td></tr>' % (rec[i][1], linkify(rec[i][0]), manacost)
         except IndexError:
             l = ' '
 
-        #try:
-        #    u = '%s ' % linkify(outrecs[i][0])
-        #except IndexError:
-        #    u = ' '
+        if len(l) == 1:
+            break
 
-        if len(c + s + e + a + l) == 5:
-           break
+        print l
 
-        out_str.append('<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (c, s , e, a, l))
-    out_str.append('</table>')
-    core.add_deck(deck)
-    for line in out_str:
-        print '<p>%s</p>' % line
+    print '</table>'
 
+# Retrieve input from index.html
+form = cgi.FieldStorage()
+
+url = form['inputurl'].value
+if "http://" not in url:
+    url = "http://%s" % url
+url = tappedout.URL_PATTERN.match(url)
+
+if url is None:
+    print '<h2>That Uril wasn\'t recognized, sorry...</h2>' #badum tss
+else:
+    url = str(url.group(1))
+    card_type = form['cardtype'].value
+
+    deck = tappedout.get_deck(url)
+    rec = rec_by_type(deck, card_type)
+    print_rec(rec, card_type)
