@@ -106,7 +106,7 @@ def add_deck(deck_dict):
     get_redis().lpush(color_str, json.dumps(deck_dict))
 
 # Returns all of the decks for a particular color. Turn dedup on if you want to remove dups
-def get_decks(colors, dedup=False):
+def get_decks(colors, dedup=True):
     color_str = 'DECKS_' + '_'.join(sorted(c.upper() for c in colors))
 
     logging.debug('Retrieving all decks from ' + color_str)
